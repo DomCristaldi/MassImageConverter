@@ -78,7 +78,7 @@ class KritaConverterWindow(tkinter.Frame):
 
         self.currentFileTypeToConvert = curFileTypeToConvStrVal.get()
 
-        
+
     #LABEL TO MAKE CONVERSION LOGIC CLEAR (hopefully)
         tkinter.Label(conversionSettings_HorBar, text = "->").pack(side = tkinter.LEFT)
 
@@ -101,7 +101,7 @@ class KritaConverterWindow(tkinter.Frame):
 
     #DISPLAY ALL FILES THAT WILL BE ALTERED
         self.listBox_TargetFiles = tkinter.Listbox(self)
-        self.listBox_TargetFiles.pack(side = tkinter.BOTTOM)
+        self.listBox_TargetFiles.pack(side = tkinter.BOTTOM, fill = tkinter.BOTH, expand = True)
         
         #populate the list box in case we had any info we wanted to throw in there
         self.PopulateListBox_TargetFiles(self.filesToConvert)
@@ -109,16 +109,15 @@ class KritaConverterWindow(tkinter.Frame):
         #self.DrawUI()
 
 #POPULATE LIST BOX WITH FILES WE WITH TO CONVERT
-    def PopulateListBox_TargetFiles(self, fileNames):
+    def PopulateListBox_TargetFiles(self, fileNames: str):
         #clear list box
         self.listBox_TargetFiles.delete(0, tkinter.END)
 
         for fN in fileNames:
-            #print(fN)
             self.listBox_TargetFiles.insert(tkinter.END, fN)
 
 
-    def GetFilesFromFolder(self, fileTypeConvertFrom, folderPath):
+    def GetFilesFromFolder(self, fileTypeConvertFrom: str, folderPath: str):
 
         #for each supplied file extension, construct a string of the path to the target directory, the wildcard, and the file extension
             #ie, folderPath/*.fileExten
@@ -167,6 +166,6 @@ if __name__ == "__main__":
 
     #ROOT.title("Mass Tiff Converter")
 
-    
+
 
     ROOT.mainloop()
