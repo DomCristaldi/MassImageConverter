@@ -17,9 +17,9 @@ for x in range(10):
         btn.grid(column=x, row=y, sticky=N+S+E+W)
 
 for x in range(10):
-  Grid.columnconfigure(frame, x, weight=1)
+    Grid.columnconfigure(frame, x, weight=1)
 
 for y in range(5):
-  Grid.rowconfigure(frame, y, weight=1)
+    Grid.rowconfigure(frame, y, weight=1)
 
 root.mainloop()

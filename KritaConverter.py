@@ -162,7 +162,7 @@ if __name__ == "__main__":
     #windowLabel = tkinter.Label(ROOT, fg="green")
     #windowLabel.pack()
 
-    KritaConverterWindow(ROOT).pack()
+    KritaConverterWindow(ROOT).grid(sticky = tkinter.NSEW)
 
     #ROOT.title("Mass Tiff Converter")
 
