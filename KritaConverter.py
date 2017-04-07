@@ -3,6 +3,24 @@ import glob
 import tkinter, tkinter.constants, tkinter.filedialog
 
 
+class MassImageConverterApp(tkinter.Tk):
+    
+    def __init__(self, parent):
+        tkinter.Tk.__init__(self, parent)
+        self.parent = parent
+        self.InitializeApp()
+
+
+    def InitializeApp(self):
+        self.grid()
+        converterWindow = KritaConverterWindow(self).grid(column = 0, row = 0, sticky = tkinter.constants.NSEW)
+
+        self.grid_columnconfigure(0, weight = 1)
+        self.grid_rowconfigure(0, weight = 1)
+
+
+
+
 class KritaConverterWindow(tkinter.Frame):
 
 #CONSTRUCTOR
@@ -102,11 +120,12 @@ class KritaConverterWindow(tkinter.Frame):
     #DISPLAY ALL FILES THAT WILL BE ALTERED
         self.listBox_TargetFiles = tkinter.Listbox(self)
         self.listBox_TargetFiles.pack(side = tkinter.BOTTOM, fill = tkinter.BOTH, expand = True)
-        
+        #self.listBox_TargetFiles.grid(column = 0, row = 0, weight = 1)
+
         #populate the list box in case we had any info we wanted to throw in there
         self.PopulateListBox_TargetFiles(self.filesToConvert)
 
-        #self.DrawUI()
+
 
 #POPULATE LIST BOX WITH FILES WE WITH TO CONVERT
     def PopulateListBox_TargetFiles(self, fileNames: str):
@@ -156,16 +175,11 @@ class KritaConverterWindow(tkinter.Frame):
 
 
 if __name__ == "__main__":
-    ROOT = tkinter.Tk()
-
-    #create title for window
-    #windowLabel = tkinter.Label(ROOT, fg="green")
-    #windowLabel.pack()
-
-    KritaConverterWindow(ROOT).grid(sticky = tkinter.NSEW)
-
-    #ROOT.title("Mass Tiff Converter")
+    # ROOT = tkinter.Tk()
+    # KritaConverterWindow(ROOT).grid(sticky = tkinter.NSEW)
+    # ROOT.mainloop()
 
 
-
-    ROOT.mainloop()
+    app = MassImageConverterApp(None)
+    app.title("Mass Image Converter")
+    app.mainloop()
