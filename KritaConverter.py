@@ -12,7 +12,7 @@ class MassImageConverterApp(tkinter.Tk):
         self.config = configparser.ConfigParser()
         self.config.read("config.ini")
 
-        
+
 
         tkinter.Tk.__init__(self, parent)
         self.parent = parent
@@ -43,8 +43,12 @@ class KritaConverterWindow(tkinter.Frame):
 #CONSTRUCTOR
     def __init__(self, parent):
 
-        #self.controller = controller
         self.parent = parent
+
+        self.converterTools = options = {}
+        options["Krita"] = ["%s/%s"%(parent.GetFromConfigFile("Defaults", "kritainstalllocation"), "krita")]
+
+        print(self.converterTools["Krita"])
 
         self.fileTypes = options = {}
         options["PNG"] = [".png"]
@@ -215,13 +219,8 @@ class KritaConverterWindow(tkinter.Frame):
 
         if dirName:
             self.targetDir = dirName
-            #fing out how to get parent's config variable
+            #find out how to get parent's config variable
             self.parent.UpdateConfigFile("UserInfo", "lastopendir", dirName)
-            #self.parent.config.set("UserInfo", "lastopendir", "jkl;;;lkj")
-            #config.
-            print(dirName)
-
-            #print(self.parent.config.sections())
 
         return dirName
 
