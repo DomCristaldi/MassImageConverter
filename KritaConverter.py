@@ -3,6 +3,8 @@ import glob
 import configparser
 import tkinter#, tkinter.constants, tkinter.filedialog
 
+import pprint
+
 class ConfigHandler:
     def __init__(self, path: str):
         self.path = path
@@ -16,6 +18,42 @@ class ConfigHandler:
         self.configFile.set(section, entry, data)
         with open(self.path, "w") as cf:
             self.configFile.write(cf)
+
+#TODO: look at implement something better than just a wrapper around a dict, but don't go overboard and reimplement dict
+class FileTypesHandler:
+    def __init__(self):
+        self.fileTypes = {}
+
+    def __getitem__(self, key):
+        return self.fileTypes[key]
+
+    def keys(self):
+        return self.fileTypes.keys()
+
+    def VerifyTypeExtension(self, typeExtension: str):
+#TODO: Verify that the typeExtension is of format ".ext", don't allow for funky stuff
+    #figure out what's the best exception to throw
+        return typeExtension is not None and typeExtension is not ""
+
+    def AddFileType(self, friendlyName: str, typeExtensions: str):
+
+        #add the category if we didn't have it already
+            #but don't add any info because we want to verify it first
+        if friendlyName not in self.fileTypes.keys():
+            self.fileTypes[friendlyName] = []
+
+        #verify that the info is good before we add it
+        for ext in typeExtensions:
+            if self.VerifyTypeExtension(ext) and ext not in self.fileTypes[friendlyName]:
+
+                #we were passed a single tring, we need to stop now or else we'll add characters one at a time
+                if isinstance(typeExtensions, str):
+                    self.fileTypes[friendlyName].append(typeExtensions)
+                    break
+
+                self.fileTypes[friendlyName].append(ext)
+
+
 
 #Generic Conversion Tool to call command line interfaces
 class ConversionTool:
@@ -97,14 +135,23 @@ class KritaConverterWindow(tkinter.Frame):
 #CONSTRUCTOR
     def __init__(self, parent):
 
+        #initialize the TKinter frame we'll be drawing to
+        tkinter.Frame.__init__(self, parent)
+
+
         self.parent = parent
 
         self.converterTools = {"Krita": ConversionTool_Krita(parent.config)}
 
-        self.fileTypes = options = {}
-        options["PNG"] = [".png"]
-        options["JPG"] = [".jpg"]
-        options["TIFF"] = [".tiff", ".tif"]
+        self.fileTypes = FileTypesHandler()
+        self.fileTypes.AddFileType("PNG", ".png")
+        self.fileTypes.AddFileType("JPG", ".jpg")
+        self.fileTypes.AddFileType("TIFF", [".tiff", ".tif"])
+
+        # self.fileTypes = options = {}
+        # options["PNG"] = [".png"]
+        # options["JPG"] = [".jpg"]
+        # options["TIFF"] = [".tiff", ".tif"]
 
         #set a default
         self.currentFileType_ConvertFrom = self.parent.GetFromConfigFile("UserInfo", "lastfiletoconvertfrom")#"TIFF"
@@ -141,8 +188,6 @@ class KritaConverterWindow(tkinter.Frame):
         options["pady"] = 5
 
 
-        #initialize the TKinter frame we'll be drawing to
-        tkinter.Frame.__init__(self, parent)
 
     #OPEN FOLDER
         tkinter.Button(self,
