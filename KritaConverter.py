@@ -12,6 +12,8 @@ class MassImageConverterApp(tkinter.Tk):
         self.config = configparser.ConfigParser()
         self.config.read("config.ini")
 
+        
+
         tkinter.Tk.__init__(self, parent)
         self.parent = parent
         self.InitializeApp()
@@ -50,13 +52,14 @@ class KritaConverterWindow(tkinter.Frame):
         options["TIFF"] = [".tiff", ".tif"]
 
         #set a default
-        self.currentFileTypeToConvert = "TIFF"
-        self.currentFileTypeConvertTarget = "PNG"
+        self.currentFileType_ConvertFrom = self.parent.GetFromConfigFile("UserInfo", "lastfiletoconvertfrom")#"TIFF"
+        self.currentFileType_ConvertTo = self.parent.GetFromConfigFile("UserInfo", "lastfiletoconvertto") #"PNG"
 
 
         self.targetDir = self.parent.GetFromConfigFile("UserInfo", "lastopendir")
+        self.saveDir = self.parent.GetFromConfigFile("UserInfo", "targetsavedir")
 
-        self.filesToConvert = self.GetFilesFromFolder(self.currentFileTypeToConvert, self.targetDir)
+        self.filesToConvert = self.GetFilesFromFolder(self.currentFileType_ConvertFrom, self.targetDir)
 
         #parent.title = "Mass Tiff Converter"
 
@@ -99,14 +102,14 @@ class KritaConverterWindow(tkinter.Frame):
 
 
     #SET FILE TYPE WE WANT CONVERTED FROM
-        curFileTypeToConvStrVal = tkinter.StringVar(value = self.currentFileTypeToConvert)
+        curFileTypeToConvStrVal = tkinter.StringVar(value = self.currentFileType_ConvertFrom)
 
         tkinter.OptionMenu(conversionSettings_HorBar,
                            curFileTypeToConvStrVal,
                            *list(self.fileTypes.keys()),
-                           command = self.UpdateTargetFileType).pack(side = tkinter.LEFT)
+                           command = self.UpdateTargetFileType_ConvertFrom).pack(side = tkinter.LEFT)
 
-        self.currentFileTypeToConvert = curFileTypeToConvStrVal.get()
+        self.currentFileType_ConvertFrom = curFileTypeToConvStrVal.get()
 
 
     #LABEL TO MAKE CONVERSION LOGIC CLEAR (hopefully)
@@ -114,13 +117,14 @@ class KritaConverterWindow(tkinter.Frame):
 
 
     #SET FILE TYPE WE WANT TO CONVERT TO
-        curFileTypeConvTarget = tkinter.StringVar(value = self.currentFileTypeConvertTarget)
+        curFileTypeConvTarget = tkinter.StringVar(value = self.currentFileType_ConvertTo)
 
         tkinter.OptionMenu(conversionSettings_HorBar,
                            curFileTypeConvTarget,
-                           *list(self.fileTypes.keys())).pack(side = tkinter.LEFT)
+                           *list(self.fileTypes.keys()),
+                           command = self.UpdateTargetFileType_ConverTo).pack(side = tkinter.LEFT)
 
-        self.currentFileTypeConvertTarget = curFileTypeConvTarget.get()
+        self.currentFileType_ConvertTo = curFileTypeConvTarget.get()
 
 
     #RELOAD BUTTON
@@ -149,11 +153,11 @@ class KritaConverterWindow(tkinter.Frame):
             self.listBox_TargetFiles.insert(tkinter.END, fN)
 
 
-    def GetFilesFromFolder(self, fileTypeConvertFrom: str, folderPath: str):
+    def GetFilesFromFolder(self, fileType: str, folderPath: str):
 
         #for each supplied file extension, construct a string of the path to the target directory, the wildcard, and the file extension
             #ie, folderPath/*.fileExten
-        filePaths = ["%s/*%s"%(folderPath, p) for p in self.fileTypes[fileTypeConvertFrom]]
+        filePaths = ["%s/*%s"%(folderPath, p) for p in self.fileTypes[fileType]]
 
         foundFiles = []
         for fPath in filePaths:
@@ -163,17 +167,35 @@ class KritaConverterWindow(tkinter.Frame):
 
 #HELPER FUNCTION TO AUTOMATE UPDATING LIST BOX WITH NEW FILES
     def UpdateListbox(self):
-        self.PopulateListBox_TargetFiles(self.GetFilesFromFolder(self.currentFileTypeToConvert,
-                                                                 self.targetDir))
+        #update the list of all files we think we can convert
+        self.UpdateTargetFileType_ConvertFrom(self.currentFileType_ConvertFrom)
+
+        print(self.filesToConvert)
+
+        #self.PopulateListBox_TargetFiles(self.GetFilesFromFolder(self.currentFileType_ConvertFrom,
+        #                                                         self.targetDir))
 
 
-    def UpdateTargetFileType(self, fType):
-        self.currentFileTypeToConvert = fType
-        self.UpdateListbox()
+    def UpdateTargetFileType_ConvertFrom(self, fType):
+        self.currentFileType_ConvertFrom = fType
+        self.filesToConvert = self.GetFilesFromFolder(fType, self.targetDir)
+
+        self.PopulateListBox_TargetFiles(self.filesToConvert)
+
+        #update config file so we remember our setting next time we open the program
+        self.parent.UpdateConfigFile("UserInfo", "lastfiletoconvertfrom", self.currentFileType_ConvertFrom)
+
+        #self.UpdateListbox()
+
+    def UpdateTargetFileType_ConverTo(self, fType):
+        self.currentFileType_ConvertTo = fType
+
+        #update config file so we remember our setting next time we open the program
+        self.parent.UpdateConfigFile("UserInfo", "lastfiletoconvertto", self.currentFileType_ConvertTo)
 
     # def UpdateListbox(self, fType = None):
     #     if fType is None:
-    #         fType = self.currentFileTypeToConvert
+    #         fType = self.currentFileType_ConvertFrom
 
     #     self.PopulateListBox_TargetFiles(self.GetFilesFromFolder(fType,
     #                                                              self.targetDir))
