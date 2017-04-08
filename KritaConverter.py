@@ -54,7 +54,7 @@ class KritaConverterWindow(tkinter.Frame):
         self.currentFileTypeConvertTarget = "PNG"
 
 
-        self.targetDir = self.parent.GetFromConfigFile("UserInfo", "LastOpenDir")
+        self.targetDir = self.parent.GetFromConfigFile("UserInfo", "lastopendir")
 
         self.filesToConvert = self.GetFilesFromFolder(self.currentFileTypeToConvert, self.targetDir)
 
@@ -194,8 +194,8 @@ class KritaConverterWindow(tkinter.Frame):
         if dirName:
             self.targetDir = dirName
             #fing out how to get parent's config variable
-            self.parent.UpdateConfigFile("UserInfo", "LastOpenDir", dirName)
-            #self.parent.config.set("UserInfo", "lastOpenDir", "jkl;;;lkj")
+            self.parent.UpdateConfigFile("UserInfo", "lastopendir", dirName)
+            #self.parent.config.set("UserInfo", "lastopendir", "jkl;;;lkj")
             #config.
             print(dirName)
 
