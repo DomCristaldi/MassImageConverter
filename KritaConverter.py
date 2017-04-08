@@ -1,23 +1,39 @@
 import os
+import subprocess
 import glob
 import configparser
-import tkinter#, tkinter.constants, tkinter.filedialog
+import tkinter, tkinter.constants, tkinter.filedialog
 
 import pprint
 
 class ConfigHandler:
     def __init__(self, path: str):
         self.path = path
-        self.configFile = configparser.ConfigParser()
-        self.configFile.read(path)
+        #self.configFile = configparser.ConfigParser()
+        #self.configFile.read(path)
 
     def GetFromConfigFile(self, section: str, entry: str):
-        return self.configFile.get(section, entry)
+        entryVal = None
+        with open(self.path, "r") as cf:
+            configFile = configparser.ConfigParser()
+            configFile.read_file(cf)
+            entryVal = configFile.get(section, entry)
+        #return self.configFile.get(section, entry)
+        return entryVal
 
     def UpdateConfigFile(self, section: str, entry: str, data: str):
-        self.configFile.set(section, entry, data)
+        configFile = configparser.ConfigParser()
+        configFile.read(self.path)
+        configFile.set(section, entry, data)
+
         with open(self.path, "w") as cf:
-            self.configFile.write(cf)
+            configFile.write(cf)
+            #configFile._write_section(cf, section, entry)
+
+        # self.configFile.set(section, entry, data)
+        # with open(self.path, "w") as cf:
+        #     self.configFile.write(cf)
+
 
 #TODO: look at implement something better than just a wrapper around a dict, but don't go overboard and reimplement dict
 class FileTypesHandler:
@@ -30,13 +46,14 @@ class FileTypesHandler:
     def keys(self):
         return self.fileTypes.keys()
 
+    def HasFileType(self, fileType: str):
+        for f in self.fileTypes:
+            if f == fileType: return True
+        return False
+
 #PROMLEM: doesn't know fromType and toType are in the dictionary
     def CheckCanConvert(self, targetFile: str, fromType: str, toType: str):
-        print(fromType)
-        print(fromType in self.fileTypes is True)
-        print(toType in list(self.fileTypes.keys()) is True)
-        print(self.fileTypes.keys())
-        return fromType in self.fileTypes.keys() is True and toType in self.fileTypes.keys() is True
+        return (self.HasFileType(fromType) and self.HasFileType(toType))
 
     def GetExtensions(self, friendlyName: str):
         if friendlyName not in self.fileTypes.keys():
@@ -116,18 +133,14 @@ class ConversionTool:
     #def GetFileEnding(self, targetFileFullPath)
 
     def ConvertFile(self, targetFileFullPath: str, fromType: str, toType: str):
-        print("start converting")
 
     #ERROR CHECKING
         #can't convert
         if self.validFileTypes.CheckCanConvert(targetFileFullPath, fromType, toType) is not True:
             return
-        print("can convert")
         #it's on record, but we don't know any actual extensions
         if self.validFileTypes.GetNumExtensions(fromType) < 1 or self.validFileTypes.GetNumExtensions(toType) < 1:
             return
-
-        print("have extensions")
 
         fromExt = None
         toExt = None
@@ -135,23 +148,32 @@ class ConversionTool:
 
         #attempt to extract the full file path and the extension
         possibleExtensions = self.validFileTypes.GetExtensions(fromType)
+
         for ext in possibleExtensions:
-            if targetFileFullPath.endswith(fromType) is True:
-                #fromExt = self.validFileTypes.GetEndingExtension(targetFileFullPath)
+            if targetFileFullPath.endswith(ext) is True:
                 fromExt = ext
                 targetFileNoExt = targetFileFullPath[:-len(fromExt)]
+                break
 
         if fromExt is None or targetFileNoExt is None:
             return
 
-        print("populated data")
-
         toExt = self.validFileTypes.GetDefaultExtension(toType)
 
-        finalCommand = self.cliCommand.format(self.path, self.exeName, targetFileNoExt, fromExt, toType)
-        print(finalCommand)
-        os.system(finalCommand)
-        #os.system(self.cliCommand.format(self.path, self.exeName, targetFilePath, fromType, toType))
+
+        #get us into our tool's directory
+        os.chdir(self.path)
+
+        #build the command to run the tool
+        finalCommand = self.cliCommand.format(exeName=self.exeName,
+                                              fileNameNoExten=targetFileNoExt,
+                                              fromType=fromExt,
+                                              toType=toExt)
+
+        print("Executing: %s"%finalCommand)
+
+        #call the function we just created on the command line
+        subprocess.call(finalCommand.split())
 
 #Special Conversion Tool preconfigured for Krita
 class ConversionTool_Krita(ConversionTool):
@@ -171,7 +193,7 @@ class ConversionTool_Krita(ConversionTool):
                                 "Krita" if friendlyName is None else friendlyName,
                                 configInfo.GetFromConfigFile("Krita", "kritainstalllocation") if path is None else path,
                                 configInfo.GetFromConfigFile("Krita", "kritaexename") if exeName is None else exeName,
-                                "{execName} {fileNameNoExten}{fromType} --export --export-filename {fileNameNoExten}{toType}" if cliCommand is None else cliCommand)
+                                "{exeName} {fileNameNoExten}{fromType} --export --export-filename {fileNameNoExten}{toType}" if cliCommand is None else cliCommand)
 
 
 class MassImageConverterApp(tkinter.Tk):
@@ -349,13 +371,16 @@ class KritaConverterWindow(tkinter.Frame):
 
 #CONVER FILES
     def ConvertSelectedFiles(self):
-        #print("CONVERT!!!")
-        #print(self.converterTools["Krita"].validFileTypes.GetExtensions(friendlyName="TIFF"))
-        #print(self.converterTools["Krita"].validFileTypes.GetDefaultExtension("TIFF"))
+        print("Converting")
+
         for f in self.filesToConvert:
+            print("Converting Items %s/%s"%(self.filesToConvert.index(f),
+                                            len(self.filesToConvert)))
+
             self.converterTools[self.currentConversionTool].ConvertFile(f,
                                                                         'TIFF',#self.currentFileType_ConvertFrom,
                                                                         'PNG')#self.currentFileType_ConvertTo)
+        print("Done")
 
     def GetFilesFromFolder(self, fileType: str, folderPath: str):
 
