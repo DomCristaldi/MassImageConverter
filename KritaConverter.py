@@ -30,9 +30,9 @@ class FileTypesHandler:
     def keys(self):
         return self.fileTypes.keys()
 
-    def VerifyTypeExtension(self, typeExtension: str):
 #TODO: Verify that the typeExtension is of format ".ext", don't allow for funky stuff
     #figure out what's the best exception to throw
+    def VerifyTypeExtension(self, typeExtension: str):
         return typeExtension is not None and typeExtension is not ""
 
     def AddFileType(self, friendlyName: str, typeExtensions: str):
