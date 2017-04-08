@@ -212,6 +212,8 @@ class KritaConverterWindow(tkinter.Frame):
 
         self.parent = parent
 
+        self.currentConversionTool = "Krita"
+
         self.converterTools = {"Krita": ConversionTool_Krita(parent.config)}
 
         self.fileTypes = FileTypesHandler()
@@ -335,8 +337,11 @@ class KritaConverterWindow(tkinter.Frame):
     def ConvertSelectedFiles(self):
         #print("CONVERT!!!")
         #print(self.converterTools["Krita"].validFileTypes.GetExtensions(friendlyName="TIFF"))
-        print(self.converterTools["Krita"].validFileTypes.GetDefaultExtension("TIFF"))
-
+        #print(self.converterTools["Krita"].validFileTypes.GetDefaultExtension("TIFF"))
+        for f in self.filesToConvert:
+            self.converterTools[self.currentConversionTool].ConvertFile(f,
+                                                                        self.currentFileType_ConvertFrom,
+                                                                        self.currentFileType_ConvertTo)
 
     def GetFilesFromFolder(self, fileType: str, folderPath: str):
 
