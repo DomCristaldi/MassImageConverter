@@ -30,7 +30,33 @@ class FileTypesHandler:
     def keys(self):
         return self.fileTypes.keys()
 
-#TODO: Verify that the typeExtension is of format ".ext", don't allow for funky stuff
+    def CheckCanConvert(self, targetFile: str, fromType: str, toType: str):
+        return fromType in self.fileTypes.keys() is True and toType in self.fileTypes.keys() is True
+
+    def GetExtensions(self, friendlyName: str):
+        if friendlyName not in self.fileTypes.keys():
+            return []
+        return self.fileTypes[friendlyName]
+
+    def GetNumExtensions(self, friendlyName: str):
+        if friendlyName not in self.fileTypes.keys():
+            return 0
+        return len(self.fileTypes[friendlyName])
+
+    def GetEndingExtension(self, filePath: str, fileType: str):
+        for ext in self.GetExtensions(fileType):
+            if filePath.endswith(ext):
+                return ext
+        return None
+
+    def GetDefaultExtension(self, fileType: str):
+        if fileType not in self.fileTypes.keys():
+            return None
+        if self.GetNumExtensions(fileType) < 1:
+            return None
+        return self.fileTypes[fileType][0]
+
+    #TODO: Verify that the typeExtension is of format ".ext", don't allow for funky stuff
     #figure out what's the best exception to throw
     def VerifyTypeExtension(self, typeExtension: str):
         return typeExtension is not None and typeExtension is not ""
@@ -54,11 +80,20 @@ class FileTypesHandler:
                 self.fileTypes[friendlyName].append(ext)
 
 
+class FileTypesHandler_Krita(FileTypesHandler):
+    def __init__(self):
+        FileTypesHandler.__init__(self)
+
+        self.AddFileType("PNG", ".png")
+        self.AddFileType("JPG", ".jpg")
+        self.AddFileType("TIFF", [".tiff", ".tif"])
+
 
 #Generic Conversion Tool to call command line interfaces
 class ConversionTool:
     def __init__(self,
                  configInfo: ConfigHandler,
+                 validFileTypes: FileTypesHandler,
                  friendlyName: str,
                  path: str,
                  exeName: str,
@@ -66,19 +101,50 @@ class ConversionTool:
 
         self.configInfo = configInfo
 
+        self.validFileTypes = validFileTypes
+
         self.friendlyName = friendlyName
         self.path = path
         self.exeName = exeName
         self.cliCommand = cliCommand
 
-    def ConvertFile(self, targetFilePath: str, fromType: str, toType: str):
-        os.system(self.cliCommand.format(self.path, self.exeName, targetFilePath, fromType, toType))
+    #def GetFileEnding(self, targetFileFullPath)
+
+    def ConvertFile(self, targetFileFullPath: str, fromType: str, toType: str):
+    #ERROR CHECKING
+        #can't convert
+        if self.validFileTypes.CheckCanConvert(targetFileFullPath, fromType, toType) is not True:
+            return
+        #it's on record, but we don't know any actual extensions
+        if self.validFileTypes.GetNumExtensions(fromType) < 1 or self.validFileTypes.GetNumExtensions(toType) < 1:
+            return
+
+        fromExt = None
+        toExt = None
+        targetFileNoExt = None
+
+        #attempt to extract the full file path and the extension
+        possibleExtensions = self.validFileTypes.GetExtensions(fromType)
+        for ext in possibleExtensions:
+            if targetFileFullPath.endswith(fromType) is True:
+                #fromExt = self.validFileTypes.GetEndingExtension(targetFileFullPath)
+                fromExt = ext
+                targetFileNoExt = targetFileFullPath[:-len(fromExt)]
+
+        if fromExt is None or targetFileNoExt is None:
+            return
+
+        toExt = self.validFileTypes.GetDefaultExtension(toType)
+
+        os.system(self.cliCommand.format(self.path, self.exeName, targetFileNoExt, fromExt, toType))
+        #os.system(self.cliCommand.format(self.path, self.exeName, targetFilePath, fromType, toType))
 
 #Special Conversion Tool preconfigured for Krita
 class ConversionTool_Krita(ConversionTool):
     #default the data we want to fill to None, but allow for overwriting if we want to do something custom later
     def __init__(self,
                  configInfo: ConfigHandler,
+                 validFileTypes: FileTypesHandler = None,
                  friendlyName: str = None,
                  path: str = None,
                  exeName: str = None,
@@ -87,6 +153,7 @@ class ConversionTool_Krita(ConversionTool):
         #Initialize all data from the class, allow for custom data if you want it
         ConversionTool.__init__(self,
                                 configInfo,
+                                FileTypesHandler_Krita() if validFileTypes is None else validFileTypes(),
                                 "Krita" if friendlyName is None else friendlyName,
                                 configInfo.GetFromConfigFile("Krita", "kritainstalllocation") if path is None else path,
                                 configInfo.GetFromConfigFile("Krita", "kritaexename") if exeName is None else exeName,
@@ -236,10 +303,18 @@ class KritaConverterWindow(tkinter.Frame):
                        text = "Reload Files",
                        command = self.UpdateListbox).pack()
 
+    #GROUPING FOR FILES AND CONVERT BUTTON
+        filesAndConvert = tkinter.Frame(self)
+        filesAndConvert.pack(side = tkinter.BOTTOM, fill = tkinter.BOTH, expand = True)
+
+    #CONVERT FILES BUTTON
+        tkinter.Button(filesAndConvert,
+                       text = "Convert Files",
+                       command = self.ConvertSelectedFiles).pack(side = tkinter.RIGHT)
 
 
     #DISPLAY ALL FILES THAT WILL BE ALTERED
-        self.listBox_TargetFiles = tkinter.Listbox(self)
+        self.listBox_TargetFiles = tkinter.Listbox(filesAndConvert)
         self.listBox_TargetFiles.pack(side = tkinter.BOTTOM, fill = tkinter.BOTH, expand = True)
         #self.listBox_TargetFiles.grid(column = 0, row = 0, weight = 1)
 
@@ -255,6 +330,12 @@ class KritaConverterWindow(tkinter.Frame):
 
         for fN in fileNames:
             self.listBox_TargetFiles.insert(tkinter.END, fN)
+
+#CONVER FILES
+    def ConvertSelectedFiles(self):
+        #print("CONVERT!!!")
+        #print(self.converterTools["Krita"].validFileTypes.GetExtensions(friendlyName="TIFF"))
+        print(self.converterTools["Krita"].validFileTypes.GetDefaultExtension("TIFF"))
 
 
     def GetFilesFromFolder(self, fileType: str, folderPath: str):
