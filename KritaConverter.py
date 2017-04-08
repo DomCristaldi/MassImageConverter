@@ -1,11 +1,17 @@
 import os
 import glob
+import configparser
 import tkinter, tkinter.constants, tkinter.filedialog
 
 
 class MassImageConverterApp(tkinter.Tk):
-    
+
     def __init__(self, parent):
+
+        #store reference to config file
+        self.config = configparser.ConfigParser()
+        self.config.read("config.ini")
+
         tkinter.Tk.__init__(self, parent)
         self.parent = parent
         self.InitializeApp()
@@ -13,18 +19,30 @@ class MassImageConverterApp(tkinter.Tk):
 
     def InitializeApp(self):
         self.grid()
-        converterWindow = KritaConverterWindow(self).grid(column = 0, row = 0, sticky = tkinter.constants.NSEW)
+        KritaConverterWindow(self).grid(column = 0, row = 0, sticky = tkinter.constants.NSEW)
 
         self.grid_columnconfigure(0, weight = 1)
         self.grid_rowconfigure(0, weight = 1)
 
+
+    def GetFromConfigFile(self, section: str, entry: str):
+        return self.config.get(section, entry)
+
+    #HELPER FUNCTION FOR UPDATING CONFIG FILE
+    def UpdateConfigFile(self, section: str, entry: str, data: str):
+        self.config.set(section, entry, data)
+        with open("config.ini", "w") as configFile:
+            self.config.write(configFile)
 
 
 
 class KritaConverterWindow(tkinter.Frame):
 
 #CONSTRUCTOR
-    def __init__(self, root):
+    def __init__(self, parent):
+
+        #self.controller = controller
+        self.parent = parent
 
         self.fileTypes = options = {}
         options["PNG"] = [".png"]
@@ -36,10 +54,11 @@ class KritaConverterWindow(tkinter.Frame):
         self.currentFileTypeConvertTarget = "PNG"
 
 
-        self.targetDir = ""
-        self.filesToConvert = []
+        self.targetDir = self.parent.GetFromConfigFile("UserInfo", "LastOpenDir")
 
-        #root.title = "Mass Tiff Converter"
+        self.filesToConvert = self.GetFilesFromFolder(self.currentFileTypeToConvert, self.targetDir)
+
+        #parent.title = "Mass Tiff Converter"
 
         #FILE OPTIONS
         self.file_opt = options = {} #options dictionary for files
@@ -47,15 +66,15 @@ class KritaConverterWindow(tkinter.Frame):
         options["filetypes"] = [("all files", ".*"), ("text files", ".txt")]
         options["initialdir"] = "C:\\"
         options["initialfile"] = "myfile.txt"
-        options["parent"] = root
+        options["parent"] = parent
         options["title"] = "This is a title for Files."
 
         #DIRECTORY OPTIONS
         self.dir_opt = options = {} #options dictionary for directories/files
-        options["initialdir"] = "C:\\"
+        options["initialdir"] = self.targetDir
         options["mustexist"] = False
-        options["parent"] = root
-        options["title"] = "This is a Title for Directories."
+        options["parent"] = parent
+        options["title"] = "Open Folder To Mass Convert Images"
 
         #BUTTON OPTIONS
         self.button_opt = options = {}
@@ -63,17 +82,9 @@ class KritaConverterWindow(tkinter.Frame):
         options["padx"] = 5
         options["pady"] = 5
 
-        print("boop")
 
         #initialize the TKinter frame we'll be drawing to
-        tkinter.Frame.__init__(self, root)
-
-        #kick off drawing ui function
-
-                # #OPEN FILE
-        # tkinter.Button(self,
-        #                text="Open File",
-        #                command=self.AskOpenFile).pack(**self.button_opt)
+        tkinter.Frame.__init__(self, parent)
 
     #OPEN FOLDER
         tkinter.Button(self,
@@ -92,7 +103,8 @@ class KritaConverterWindow(tkinter.Frame):
 
         tkinter.OptionMenu(conversionSettings_HorBar,
                            curFileTypeToConvStrVal,
-                           *list(self.fileTypes.keys())).pack(side = tkinter.LEFT)
+                           *list(self.fileTypes.keys()),
+                           command = self.UpdateTargetFileType).pack(side = tkinter.LEFT)
 
         self.currentFileTypeToConvert = curFileTypeToConvStrVal.get()
 
@@ -111,10 +123,11 @@ class KritaConverterWindow(tkinter.Frame):
         self.currentFileTypeConvertTarget = curFileTypeConvTarget.get()
 
 
-        #RELOAD BUTTON
+    #RELOAD BUTTON
         tkinter.Button(self,
                        text = "Reload Files",
                        command = self.UpdateListbox).pack()
+
 
 
     #DISPLAY ALL FILES THAT WILL BE ALTERED
@@ -140,7 +153,7 @@ class KritaConverterWindow(tkinter.Frame):
 
         #for each supplied file extension, construct a string of the path to the target directory, the wildcard, and the file extension
             #ie, folderPath/*.fileExten
-        filePaths = ["%s/*%s"%(folderPath ,p) for p in self.fileTypes[fileTypeConvertFrom]]
+        filePaths = ["%s/*%s"%(folderPath, p) for p in self.fileTypes[fileTypeConvertFrom]]
 
         foundFiles = []
         for fPath in filePaths:
@@ -152,6 +165,18 @@ class KritaConverterWindow(tkinter.Frame):
     def UpdateListbox(self):
         self.PopulateListBox_TargetFiles(self.GetFilesFromFolder(self.currentFileTypeToConvert,
                                                                  self.targetDir))
+
+
+    def UpdateTargetFileType(self, fType):
+        self.currentFileTypeToConvert = fType
+        self.UpdateListbox()
+
+    # def UpdateListbox(self, fType = None):
+    #     if fType is None:
+    #         fType = self.currentFileTypeToConvert
+
+    #     self.PopulateListBox_TargetFiles(self.GetFilesFromFolder(fType,
+    #                                                              self.targetDir))
 
 #BINDING FUNCTIONS FOR UI ELEMENTS
     def AskOpenFile(self):
@@ -168,7 +193,13 @@ class KritaConverterWindow(tkinter.Frame):
 
         if dirName:
             self.targetDir = dirName
+            #fing out how to get parent's config variable
+            self.parent.UpdateConfigFile("UserInfo", "LastOpenDir", dirName)
+            #self.parent.config.set("UserInfo", "lastOpenDir", "jkl;;;lkj")
+            #config.
             print(dirName)
+
+            #print(self.parent.config.sections())
 
         return dirName
 
