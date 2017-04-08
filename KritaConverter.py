@@ -30,7 +30,12 @@ class FileTypesHandler:
     def keys(self):
         return self.fileTypes.keys()
 
+#PROMLEM: doesn't know fromType and toType are in the dictionary
     def CheckCanConvert(self, targetFile: str, fromType: str, toType: str):
+        print(fromType)
+        print(fromType in self.fileTypes is True)
+        print(toType in list(self.fileTypes.keys()) is True)
+        print(self.fileTypes.keys())
         return fromType in self.fileTypes.keys() is True and toType in self.fileTypes.keys() is True
 
     def GetExtensions(self, friendlyName: str):
@@ -111,13 +116,18 @@ class ConversionTool:
     #def GetFileEnding(self, targetFileFullPath)
 
     def ConvertFile(self, targetFileFullPath: str, fromType: str, toType: str):
+        print("start converting")
+
     #ERROR CHECKING
         #can't convert
         if self.validFileTypes.CheckCanConvert(targetFileFullPath, fromType, toType) is not True:
             return
+        print("can convert")
         #it's on record, but we don't know any actual extensions
         if self.validFileTypes.GetNumExtensions(fromType) < 1 or self.validFileTypes.GetNumExtensions(toType) < 1:
             return
+
+        print("have extensions")
 
         fromExt = None
         toExt = None
@@ -134,9 +144,13 @@ class ConversionTool:
         if fromExt is None or targetFileNoExt is None:
             return
 
+        print("populated data")
+
         toExt = self.validFileTypes.GetDefaultExtension(toType)
 
-        os.system(self.cliCommand.format(self.path, self.exeName, targetFileNoExt, fromExt, toType))
+        finalCommand = self.cliCommand.format(self.path, self.exeName, targetFileNoExt, fromExt, toType)
+        print(finalCommand)
+        os.system(finalCommand)
         #os.system(self.cliCommand.format(self.path, self.exeName, targetFilePath, fromType, toType))
 
 #Special Conversion Tool preconfigured for Krita
@@ -340,8 +354,8 @@ class KritaConverterWindow(tkinter.Frame):
         #print(self.converterTools["Krita"].validFileTypes.GetDefaultExtension("TIFF"))
         for f in self.filesToConvert:
             self.converterTools[self.currentConversionTool].ConvertFile(f,
-                                                                        self.currentFileType_ConvertFrom,
-                                                                        self.currentFileType_ConvertTo)
+                                                                        'TIFF',#self.currentFileType_ConvertFrom,
+                                                                        'PNG')#self.currentFileType_ConvertTo)
 
     def GetFilesFromFolder(self, fileType: str, folderPath: str):
 
