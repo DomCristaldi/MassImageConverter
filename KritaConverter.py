@@ -17,7 +17,7 @@ class ConfigHandler:
         with open(self.path, "w") as cf:
             self.configFile.write(cf)
 
-
+#Generic Conversion Tool to call command line interfaces
 class ConversionTool:
     def __init__(self,
                  configInfo: ConfigHandler,
@@ -36,21 +36,23 @@ class ConversionTool:
     def ConvertFile(self, targetFilePath: str, fromType: str, toType: str):
         os.system(self.cliCommand.format(self.path, self.exeName, targetFilePath, fromType, toType))
 
+#Special Conversion Tool preconfigured for Krita
 class ConversionTool_Krita(ConversionTool):
+    #default the data we want to fill to None, but allow for overwriting if we want to do something custom later
     def __init__(self,
                  configInfo: ConfigHandler,
-                 friendlyName: str,
-                 path: str,
-                 exeName: str,
-                 cliCommand: str):
+                 friendlyName: str = None,
+                 path: str = None,
+                 exeName: str = None,
+                 cliCommand: str = None):
 
-        ConversionTool.__init__(configInfo,
-                                "Krita",
-                                configInfo.GetFromConfigFile("Krita", "kritainstalllocation"),
-                                configInfo.GetFromConfigFile("Krita", "kritaexename"),
-                                "{execName} {fileNameNoExten}{fromType} --export --export-filename {fileNameNoExten}{toType}")
-
-        #self.friendlyName = "Krita"
+        #Initialize all data from the class, allow for custom data if you want it
+        ConversionTool.__init__(self,
+                                configInfo,
+                                "Krita" if friendlyName is None else friendlyName,
+                                configInfo.GetFromConfigFile("Krita", "kritainstalllocation") if path is None else path,
+                                configInfo.GetFromConfigFile("Krita", "kritaexename") if exeName is None else exeName,
+                                "{execName} {fileNameNoExten}{fromType} --export --export-filename {fileNameNoExten}{toType}" if cliCommand is None else cliCommand)
 
 
 class MassImageConverterApp(tkinter.Tk):
@@ -97,10 +99,7 @@ class KritaConverterWindow(tkinter.Frame):
 
         self.parent = parent
 
-        self.converterTools = options = {}
-        options["Krita"] = ["%s/%s"%(parent.GetFromConfigFile("Krita", "kritainstalllocation"), "krita")]
-
-        print(self.converterTools["Krita"])
+        self.converterTools = {"Krita": ConversionTool_Krita(parent.config)}
 
         self.fileTypes = options = {}
         options["PNG"] = [".png"]
