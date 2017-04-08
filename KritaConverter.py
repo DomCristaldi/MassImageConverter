@@ -96,16 +96,15 @@ class ConversionTool_Krita(ConversionTool):
 class MassImageConverterApp(tkinter.Tk):
 
     def __init__(self, parent):
+        tkinter.Tk.__init__(self, parent)
+
+        self.parent = parent
 
         #store reference to config file
-        #self.config = configparser.ConfigParser()
-        #self.config.read("config.ini")
         self.config = ConfigHandler("config.ini")
 
+        self.geometry(self.config.GetFromConfigFile("UserInfo", "prevwindowsize"))
 
-
-        tkinter.Tk.__init__(self, parent)
-        self.parent = parent
         self.InitializeApp()
 
 
@@ -127,6 +126,11 @@ class MassImageConverterApp(tkinter.Tk):
         # self.config.set(section, entry, data)
         # with open("config.ini", "w") as configFile:
         #     self.config.write(configFile)
+
+    def OnCloseWindow(self):
+        self.config.UpdateConfigFile("UserInfo", "prevwindowsize", self.winfo_geometry())
+
+        self.destroy()
 
 
 
@@ -321,7 +325,6 @@ class KritaConverterWindow(tkinter.Frame):
         return dirName
 
 
-
 if __name__ == "__main__":
     # ROOT = tkinter.Tk()
     # KritaConverterWindow(ROOT).grid(sticky = tkinter.NSEW)
@@ -330,4 +333,5 @@ if __name__ == "__main__":
 
     app = MassImageConverterApp(None)
     app.title("Mass Image Converter")
+    app.protocol("WM_DELETE_WINDOW", app.OnCloseWindow)
     app.mainloop()
