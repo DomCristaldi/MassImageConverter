@@ -1,7 +1,56 @@
 import os
 import glob
 import configparser
-import tkinter, tkinter.constants, tkinter.filedialog
+import tkinter#, tkinter.constants, tkinter.filedialog
+
+class ConfigHandler:
+    def __init__(self, path: str):
+        self.path = path
+        self.configFile = configparser.ConfigParser()
+        self.configFile.read(path)
+
+    def GetFromConfigFile(self, section: str, entry: str):
+        return self.configFile.get(section, entry)
+
+    def UpdateConfigFile(self, section: str, entry: str, data: str):
+        self.configFile.set(section, entry, data)
+        with open(self.path, "w") as cf:
+            self.configFile.write(cf)
+
+
+class ConversionTool:
+    def __init__(self,
+                 configInfo: ConfigHandler,
+                 friendlyName: str,
+                 path: str,
+                 exeName: str,
+                 cliCommand: str):
+
+        self.configInfo = configInfo
+
+        self.friendlyName = friendlyName
+        self.path = path
+        self.exeName = exeName
+        self.cliCommand = cliCommand
+
+    def ConvertFile(self, targetFilePath: str, fromType: str, toType: str):
+        os.system(self.cliCommand.format(self.path, self.exeName, targetFilePath, fromType, toType))
+
+class ConversionTool_Krita(ConversionTool):
+    def __init__(self,
+                 configInfo: ConfigHandler,
+                 friendlyName: str,
+                 path: str,
+                 exeName: str,
+                 cliCommand: str):
+
+        ConversionTool.__init__(configInfo,
+                                "Krita",
+                                configInfo.GetFromConfigFile("Krita", "kritainstalllocation"),
+                                configInfo.GetFromConfigFile("Krita", "kritaexename"),
+                                "{execName} {fileNameNoExten}{fromType} --export --export-filename {fileNameNoExten}{toType}")
+
+        #self.friendlyName = "Krita"
 
 
 class MassImageConverterApp(tkinter.Tk):
@@ -9,8 +58,9 @@ class MassImageConverterApp(tkinter.Tk):
     def __init__(self, parent):
 
         #store reference to config file
-        self.config = configparser.ConfigParser()
-        self.config.read("config.ini")
+        #self.config = configparser.ConfigParser()
+        #self.config.read("config.ini")
+        self.config = ConfigHandler("config.ini")
 
 
 
@@ -28,13 +78,15 @@ class MassImageConverterApp(tkinter.Tk):
 
 
     def GetFromConfigFile(self, section: str, entry: str):
-        return self.config.get(section, entry)
+        return self.config.GetFromConfigFile(section, entry)
 
     #HELPER FUNCTION FOR UPDATING CONFIG FILE
     def UpdateConfigFile(self, section: str, entry: str, data: str):
-        self.config.set(section, entry, data)
-        with open("config.ini", "w") as configFile:
-            self.config.write(configFile)
+        self.config.UpdateConfigFile(section, entry, data)
+
+        # self.config.set(section, entry, data)
+        # with open("config.ini", "w") as configFile:
+        #     self.config.write(configFile)
 
 
 
@@ -46,7 +98,7 @@ class KritaConverterWindow(tkinter.Frame):
         self.parent = parent
 
         self.converterTools = options = {}
-        options["Krita"] = ["%s/%s"%(parent.GetFromConfigFile("Defaults", "kritainstalllocation"), "krita")]
+        options["Krita"] = ["%s/%s"%(parent.GetFromConfigFile("Krita", "kritainstalllocation"), "krita")]
 
         print(self.converterTools["Krita"])
 
