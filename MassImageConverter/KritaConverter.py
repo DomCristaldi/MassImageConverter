@@ -224,14 +224,20 @@ class MassImageConverterApp(tkinter.Tk):
 
     #HELPER FUNCTION FOR UPDATING CONFIG FILE
     def UpdateConfigFile(self, section: str, entry: str, data: str):
-        self.config.UpdateConfigFile(section, entry, data)
+        try:
+            self.config.UpdateConfigFile(section, entry, data)
+            return True
+        except:
+            return False
 
         # self.config.set(section, entry, data)
         # with open("config.ini", "w") as configFile:
         #     self.config.write(configFile)
 
     def OnCloseWindow(self):
-        self.config.UpdateConfigFile("UserInfo", "prevwindowsize", self.winfo_geometry())
+
+        if self.config != None:
+            self.config.UpdateConfigFile("UserInfo", "prevwindowsize", self.winfo_geometry())
 
         self.destroy()
 
@@ -286,7 +292,7 @@ class KritaConverterWindow(tkinter.Frame):
         #DIRECTORY OPTIONS
         self.dir_opt = options = {} #options dictionary for directories/files
         options["initialdir"] = self.targetDir
-        options["mustexist"] = False
+        options["mustexist"] = True #False
         options["parent"] = parent
         options["title"] = "Open Folder To Mass Convert Images"
 
@@ -377,9 +383,7 @@ class KritaConverterWindow(tkinter.Frame):
             print("Converting Items %s/%s"%(self.filesToConvert.index(f),
                                             len(self.filesToConvert)))
 
-            self.converterTools[self.currentConversionTool].ConvertFile(f,
-                                                                        'TIFF',#self.currentFileType_ConvertFrom,
-                                                                        'PNG')#self.currentFileType_ConvertTo)
+            self.converterTools[self.currentConversionTool].ConvertFile(f, self.currentFileType_ConvertFrom, self.currentFileType_ConvertTo)
         print("Done")
 
     def GetFilesFromFolder(self, fileType: str, folderPath: str):
@@ -399,7 +403,7 @@ class KritaConverterWindow(tkinter.Frame):
         #update the list of all files we think we can convert
         self.UpdateTargetFileType_ConvertFrom(self.currentFileType_ConvertFrom)
 
-        print(self.filesToConvert)
+        #print(self.filesToConvert)
 
         #self.PopulateListBox_TargetFiles(self.GetFilesFromFolder(self.currentFileType_ConvertFrom,
         #                                                         self.targetDir))
@@ -438,14 +442,26 @@ class KritaConverterWindow(tkinter.Frame):
 
         return fileName
 
+    def GetDirectoryName_FileDialog(self):
+        dirName = tkinter.filedialog.askdirectory(**self.dir_opt)
+
+        #if dirName:
+            #self.targetDir = dirName
+            #find out how to get parent's config variable
+            #self.parent.UpdateConfigFile("UserInfo", "lastopendir", dirName)
+
+        return dirName
 
     def AskOpenDirectory(self):
-        dirName = tkinter.filedialog.askdirectory(**self.dir_opt)
+        #dirName = tkinter.filedialog.askdirectory(**self.dir_opt)
+
+        dirName = self.GetDirectoryName_FileDialog()
 
         if dirName:
             self.targetDir = dirName
             #find out how to get parent's config variable
             self.parent.UpdateConfigFile("UserInfo", "lastopendir", dirName)
+            self.UpdateListbox()
 
         return dirName
 
